@@ -1,0 +1,62 @@
+# Play 1: Delete the instance we created on AWS
+# Another Playbook deletes the other resources created (VPC, Subnet, SG, SSH Key Pair, Internet Gateway)
+- name: Delete EC2 instance
+  hosts: localhost
+  become: false
+  gather_facts: true
+  vars_files:
+    - ./vars/aws_common.yml
+
+  roles:
+    - {role: check_vars}
+
+  tasks:
+    - name: Check if region state file exists
+      ansible.builtin.stat:
+        path: "{{ temp_dir }}/.region"
+      register: region
+
+    - name: Fail if state file doesn't exist
+      fail:
+        msg: "Region state file '{{ temp_dir }}/.region' is not found. The 'make env-delete' command has already run."
+      when: not region.stat.exists
+
+    - name: Include Linux distribution variables
+      include_vars: "./vars/aws_{{ ec2_distro }}.yml"
+
+    - name: Include State Variables (AWS_REGION)
+      include_vars: "{{ temp_dir }}/.region"
+
+    - name: Delete EC2 instance
+      amazon.aws.ec2_instance:
+        region: "{{ aws_region }}"
+        state: absent
+        filters:
+          instance-state-name: running
+          "tag:Name": "{{ ec2_name_tag }}"
+          "tag:Environment": "{{ ec2_environment }}"
+
+    # Delete AWS resources created (VPC, Subnet, SG, SSH Key Pair, Internet Gateway)
+    - name: Delete all AWS remaining resources
+      block:
+        - name: Delete AWS resources
+          ansible.builtin.include_role:
+            name: aws_delete_resources
+        # - name: Delete Private Key
+        #   ansible.builtin.file:
+        #     path: "{{ temp_dir }}/{{ ssh_key_filename }}"
+        #     state: absent
+        # - name: Delete Public Key
+        #   ansible.builtin.file:
+        #     path: "{{ temp_dir }}/{{ ssh_key_filename }}.pub"
+        #     state: absent
+      when: delete | bool
+
+    - name: Cleanup state files
+      ansible.builtin.file:
+        path: "{{ temp_dir }}/{{ item }}"
+        state: absent
+      delegate_to: localhost
+      with_items:
+        - .region
+        - .vm

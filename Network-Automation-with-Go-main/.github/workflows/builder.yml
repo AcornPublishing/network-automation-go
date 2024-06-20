@@ -1,0 +1,58 @@
+name: AWS testing environment builder image
+on:
+  # Triggers the workflow on push events but only for the main branch
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+    paths:
+      - 'ch12/testbed/Dockerfile'
+
+  # Allows you to run this workflow manually from the Actions tab    
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: builder
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Organization name for container tag
+        run: |
+          echo ORG=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ env.REGISTRY }}/${{ env.ORG }}/${{ env.IMAGE_NAME }}
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=semver,pattern={{ version }}
+            type=sha
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ch12/testbed/.
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

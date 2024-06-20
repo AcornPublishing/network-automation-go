@@ -1,0 +1,21 @@
+name: netgo
+
+topology:
+  nodes:
+    srl:
+      kind: srl
+      image: ghcr.io/nokia/srlinux:21.6.4
+    ceos:
+      kind: ceos
+      image: ceos:4.28
+      startup-config: ceos-startup
+      binds:
+      - secure/ssl:/persist/secure/ssl
+    cvx:
+      kind: cvx
+      image: networkop/cx:5.0.0
+      runtime: docker
+
+  links:
+    - endpoints: ["srl:e1-1", "ceos:eth1"]
+    - endpoints: ["cvx:swp1", "ceos:eth2"]

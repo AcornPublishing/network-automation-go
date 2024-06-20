@@ -1,0 +1,46 @@
+- name: Download Go
+  ansible.builtin.get_url:
+    url: "{{ go_download_url }}"
+    dest: "/tmp/go{{ go_version }}.tar.gz"
+    mode: '0644'
+
+- name: Remove a previous installation at {{ go_root }}, if any, prior to extracting
+  ansible.builtin.file:
+    state: absent
+    path: "{{ go_root }}"
+
+- name: Unarchive Go
+  ansible.builtin.unarchive:
+    src: "/tmp/go{{ go_version }}.tar.gz"
+    dest: "{{ go_dest }}"
+    remote_src: true
+    mode: '0755'
+
+- name: Recursively change ownership of Go's local directory
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/go"
+    state: directory
+    recurse: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# .bash_profile does not exist in Ubuntu
+- name: Update PATH environment variable
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    line: "export PATH=$PATH:{{ go_root }}/bin:$HOME/go/bin"
+
+# .bash_profile does not exist in Ubuntu
+- name: Temporary ASSUME_NO_MOVING_GC for Go1.18
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    line: "export ASSUME_NO_MOVING_GC_UNSAFE_RISK_IT_WITH=go1.18"
+
+- name: Install Go packages
+  ansible.builtin.command: "go install {{ item }}"
+  environment:
+    GOPATH: "/home/{{ ansible_user }}/go"
+    GOROOT: "{{ go_root }}"
+    PATH: "PATH=$PATH:{{ go_root }}/bin"
+  with_items: "{{ go_packages }}"
+  become: false

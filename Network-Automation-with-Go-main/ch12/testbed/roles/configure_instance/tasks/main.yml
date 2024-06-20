@@ -1,0 +1,20 @@
+- name: Configure common Linux stuff
+  include_tasks: common.yml
+
+- name: Install Go
+  include_tasks: install_go.yml
+
+- name: Install Docker
+  include_tasks: install_docker.yml
+
+- name: Install Terraform
+  include_tasks: install_terraform.yml
+
+- name: Copy Labs folder
+  include_tasks: copy_labs.yml
+
+- name: Install Containerlab
+  include_tasks: install_clab.yml
+
+- name: Install Ansible Collections
+  include_tasks: install_collections.yml

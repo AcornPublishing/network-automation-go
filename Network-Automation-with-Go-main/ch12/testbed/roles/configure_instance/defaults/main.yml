@@ -1,0 +1,45 @@
+# Common to all distros
+common_software:
+  - git
+  - wget
+  - tree
+  - tar
+  - tcpdump
+  - python3-pip
+  - ansible-core
+  - sshpass
+  - protobuf-compiler
+
+# ansible_distribution_file_variety
+base_software:
+  Debian:
+    - dnsutils
+    - build-essential
+    - python3-dev
+    - libssh-dev
+  RedHat:
+    - bind-utils
+    - gcc
+    - python3-devel
+    - libssh-devel
+
+python_libraries:
+  - ipaddress
+  - ansible-pylibssh
+  - ansible-navigator
+  - resolvelib>=0.5.3,<0.6.0
+
+ansible_collections:
+  - arista.eos:4.1.2
+  - community.network:3.1.0
+  - ansible.posix:1.4.0
+
+terraform_version: 1.1.9
+
+go_packages:
+  - google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+  - google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
+software_additional: []
+
+docker_repo_url: https://download.docker.com/linux

@@ -1,0 +1,19 @@
+log: true
+skip-verify: true
+
+targets:
+  203.0.113.129:9339:
+    username: cumulus
+    password: cumulus
+
+subscriptions:
+  counters:
+    target: netq
+    paths:
+      - /interfaces
+    updates-only: true
+
+outputs:
+  prom-output:
+    type: prometheus
+    listen: ":9313"

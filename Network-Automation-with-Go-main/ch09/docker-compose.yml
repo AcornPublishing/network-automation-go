@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.32.1
+    container_name: prometheus
+    volumes:
+      - ../topo-full/workdir/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../topo-full/workdir/alert.rules:/etc/prometheus/alert.rules
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=2h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    links:
+      - alertmanager:alertmanager
+    ports:
+      - 9090:9090
+
+  alertmanager:
+    image: prom/alertmanager:v0.24.0
+    container_name: alertmanager
+    volumes:
+      - ../topo-full/workdir/alertmanager.yml:/etc/alertmanager/config.yml
+    ports:
+      - 9093:9093
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+
+  grafana:
+    image: grafana/grafana:8.3.3
+    container_name: grafana
+    volumes:
+      - ../topo-full/workdir/dashboards:/etc/grafana/provisioning/dashboards
+      - ../topo-full/workdir/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      
+networks:
+  default:
+    external: true
+    name: clab

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+f=temp.json
+
+source $1
+
+if [ -z "$host" ]; then
+     printf '{"busy": false, "changed": false, "failed": true, "msg": "missing required arguments: host"}'
+     exit 1
+fi
+
+if [ -z "$user" ]; then
+     printf '{"busy": false, "changed": false, "failed": true, "msg": "missing required arguments: user"}'
+     exit 1
+fi
+
+if [ -z "$password" ]; then
+     printf '{"busy": false, "changed": false, "failed": true, "msg": "missing required arguments: password"}'
+     exit 1
+fi
+
+if [ -z "$input" ]; then
+     printf '{"busy": false, "changed": false, "failed": true, "msg": "missing required arguments: input"}'
+     exit 1
+fi
+
+printf '{"Host": "%s", "User": "%s", "Password": "%s", "Input": "%s"}' \
+"$host" "$user" "$password" "$input" > $f
+
+# Delimiting character for hostnames
+IFS='-'
+read -a list <<< "$host"
+
+# Run Go code with this file as an argument
+cd ${list[2]}
+go run main.go ../$f
+cd ..
+rm $f
+
+# For the future: https://gist.github.com/sivel/668d9a33cad0172b3b59666196738b59
